@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexPOS - Sistema de Venta e Inventario</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Boxicons (Icons) -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
+    <link rel="stylesheet" href="./styles/index.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Nex<span class="text-primary">POS</span></h2>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-target="dashboard">
+                    <i class='bx bx-grid-alt'></i> Panel Principal
+                </li>
+                <li data-target="inventory">
+                    <i class='bx bx-box'></i> Inventario
+                </li>
+                <li data-target="sales">
+                    <i class='bx bx-cart'></i> Punto de Venta
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="user-info">
+                    <span>Bienvenido, Administrador</span>
+                    <i class='bx bx-user-circle'></i>
+                </div>
+            </header>
+
+            <!-- Views -->
+            <div class="views-container">
+                <!-- Dashboard View -->
+                <section id="dashboard" class="view active">
+                    <div class="header-action">
+                        <h1>Panel Principal</h1>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class='bx bx-package'></i></div>
+                            <div class="stat-info">
+                                <h3>Total Productos</h3>
+                                <p id="dash-total-products">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class='bx bx-error-circle'></i></div>
+                            <div class="stat-info">
+                                <h3>Stock Bajo</h3>
+                                <p id="dash-low-stock">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i class='bx bx-dollar-circle'></i></div>
+                            <div class="stat-info">
+                                <h3>Ventas Totales</h3>
+                                <p id="dash-total-sales">$0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Inventory View -->
+                <section id="inventory" class="view">
+                    <div class="header-action">
+                        <h1>Inventario de Productos</h1>
+                        <button class="btn btn-primary" id="btn-add-product">
+                            <i class='bx bx-plus'></i> Nuevo Producto
+                        </button>
+                    </div>
+
+                    <div class="search-bar">
+                        <i class='bx bx-search'></i>
+                        <input type="text" id="inventory-search" placeholder="Buscar por nombre o categoría...">
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Cód.</th>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-table-body">
+                                <!-- Data will be loaded here dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Sales / POS View -->
+                <section id="sales" class="view">
+                    <div class="pos-container">
+                        <!-- Product Selection -->
+                        <div class="pos-products">
+                            <div class="search-bar">
+                                <i class='bx bx-search'></i>
+                                <input type="text" id="pos-search" placeholder="Buscar productos para vender...">
+                            </div>
+                            <div class="product-grid" id="pos-product-grid">
+                                <!-- Products loaded here -->
+                            </div>
+                        </div>
+
+                        <!-- Current Cart -->
+                        <div class="pos-cart">
+                            <h2>Carrito de Venta</h2>
+                            <div class="cart-items" id="cart-items">
+                                <!-- Items will appear here -->
+                            </div>
+                            
+                            <div class="cart-summary">
+                                <div class="summary-row">
+                                    <span>Subtotal</span>
+                                    <span id="cart-subtotal">$0.00</span>
+                                </div>
+                                <div class="summary-row total">
+                                    <span>Total</span>
+                                    <span id="cart-total">$0.00</span>
+                                </div>
+                                <button class="btn btn-success btn-large" id="btn-process-sale">
+                                    Procesar Venta
+                                </button>
+                                <button class="btn btn-danger btn-large mt-2" id="btn-clear-cart">
+                                    Cancelar Venta
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Agregar Producto</h2>
+                <i class='bx bx-x close-modal'></i>
+            </div>
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                <div class="form-group">
+                    <label>Nombre del Producto</label>
+                    <input type="text" id="product-name" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Categoría</label>
+                        <input type="text" id="product-category" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Precio ($)</label>
+                        <input type="number" id="product-price" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad en Stock</label>
+                    <input type="number" id="product-stock" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Imágenes del Producto (Máx. 5, Opcional)</label>
+                    <input type="file" id="product-images" accept="image/*" multiple>
+                    <div id="image-preview" class="image-preview-grid"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Producto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="./scripts/app.js"></script>
+    <script src="./scripts/inventory.js"></script>
+    <script src="./scripts/sales.js"></script>
+</body>
+</html>
