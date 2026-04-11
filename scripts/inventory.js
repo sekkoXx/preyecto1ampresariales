@@ -14,11 +14,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentProductImages = [];
 
     function renderTable(filter = '') {
+        if (!State.isAuthenticated) {
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Inicia sesion para ver productos.</td></tr>';
+            return;
+        }
+
         tableBody.innerHTML = '';
         
-        const products = State.products.filter(p => 
-            p.name.toLowerCase().includes(filter.toLowerCase()) || 
-            p.category.toLowerCase().includes(filter.toLowerCase())
+        const products = State.products.filter(p => {
+            const nombre = (p.name || p.nombre || '').toLowerCase();
+            const categoria = (p.category || p.categoria || '').toLowerCase();
+            const search = filter.toLowerCase();
+            return nombre.includes(search) || categoria.includes(search);
+        }
         );
 
         if (products.length === 0) {
@@ -31,12 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Highlight low stock
             const stockClass = p.stock < 10 ? 'low-stock' : '';
+            const nombre = p.name || p.nombre;
+            const categoria = p.category || p.categoria;
+            const precio = p.price || p.precio;
 
             tr.innerHTML = `
                 <td>#${p.id}</td>
-                <td><strong>${p.name}</strong></td>
-                <td>${p.category}</td>
-                <td>$${parseFloat(p.price).toFixed(2)}</td>
+                <td><strong>${nombre}</strong></td>
+                <td>${categoria}</td>
+                <td>$${parseFloat(precio).toFixed(2)}</td>
                 <td class="${stockClass}">${p.stock}</td>
                 <td class="actions-cell">
                     <button class="btn btn-secondary btn-icon" onclick="editProduct('${p.id}')">
@@ -142,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Form Submit (Create / Update)
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const id = document.getElementById('product-id').value;
@@ -151,20 +162,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const precio = parseFloat(document.getElementById('product-price').value);
         const stock = parseInt(document.getElementById('product-stock').value);
 
-        if (id) {
-            // Update
-            const index = State.products.findIndex(p => p.id === id);
-            if (index !== -1) {
-                State.products[index] = { id, name: nombre, category: categoria, price: precio, stock, images: currentProductImages };
-            }
-        } else {
-            // Create
-            const newId = Date.now().toString(); // simple ID generator
-            State.products.push({ id: newId, name: nombre, category: categoria, price: precio, stock, images: currentProductImages });
-        }
+        const payload = {
+            nombre,
+            categoria,
+            precio,
+            stock,
+            imagenes: currentProductImages,
+        };
 
-        State.saveProducts();
-        modal.classList.remove('active');
+        try {
+            if (id) {
+                await State.updateProduct(id, payload);
+            } else {
+                await State.createProduct(payload);
+            }
+            modal.classList.remove('active');
+        } catch (error) {
+            State.notify(error.message, true);
+        }
     });
 
     // Expose edit and delete to global scope for inline handlers
@@ -172,12 +187,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const product = State.products.find(p => p.id === id);
         if (product) {
             document.getElementById('product-id').value = product.id;
-            document.getElementById('product-name').value = product.name;
-            document.getElementById('product-category').value = product.category;
-            document.getElementById('product-price').value = product.price;
+            document.getElementById('product-name').value = product.name || product.nombre;
+            document.getElementById('product-category').value = product.category || product.categoria;
+            document.getElementById('product-price').value = product.price || product.precio;
             document.getElementById('product-stock').value = product.stock;
             
-            currentProductImages = product.images ? [...product.images] : [];
+            currentProductImages = product.images || product.imagenes ? [...(product.images || product.imagenes)] : [];
             renderImagePreviews();
             
             modalTitle.innerText = 'Editar Producto';
@@ -185,10 +200,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    window.deleteProduct = function(id) {
+    window.deleteProduct = async function(id) {
         if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
-            State.products = State.products.filter(p => p.id !== id);
-            State.saveProducts();
+            try {
+                await State.deleteProduct(id);
+            } catch (error) {
+                State.notify(error.message, true);
+            }
         }
     };
 

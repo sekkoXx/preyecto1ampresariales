@@ -30,6 +30,46 @@ body {
     overflow: hidden;
 }
 
+.auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.35), transparent 55%), var(--bg-dark);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.auth-overlay.active {
+    display: flex;
+}
+
+.auth-card {
+    width: min(92vw, 420px);
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+    padding: 28px;
+}
+
+.auth-card h1 {
+    margin-bottom: 10px;
+    font-size: 30px;
+}
+
+.auth-card p {
+    margin-bottom: 18px;
+    color: var(--text-muted);
+}
+
+.auth-error {
+    margin-top: 12px;
+    min-height: 20px;
+    color: var(--danger);
+    font-size: 14px;
+}
+
 .app-container {
     display: flex;
     height: 100vh;

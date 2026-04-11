@@ -1,33 +1,47 @@
 from sqlalchemy.orm import Session
+from datetime import datetime, timezone
+import json
 import modelos
 
 
 # ---------------- PRODUCTOS ----------------
 
 def crear_producto(db: Session, producto):
-    nuevo = modelos.Producto(**producto.dict())
+    data = producto.dict()
+    data["imagenes"] = json.dumps(data.get("imagenes", []))
+    nuevo = modelos.Producto(**data)
     db.add(nuevo)
     db.commit()
     db.refresh(nuevo)
+    nuevo.imagenes = json.loads(nuevo.imagenes or "[]")
     return nuevo
 
 
 def obtener_productos(db: Session):
-    return db.query(modelos.Producto).all()
+    productos = db.query(modelos.Producto).all()
+    for producto in productos:
+        producto.imagenes = json.loads(producto.imagenes or "[]")
+    return productos
 
 
 def obtener_producto(db: Session, producto_id: int):
-    return db.query(modelos.Producto).filter(modelos.Producto.id == producto_id).first()
+    producto = db.query(modelos.Producto).filter(modelos.Producto.id == producto_id).first()
+    if producto:
+        producto.imagenes = json.loads(producto.imagenes or "[]")
+    return producto
 
 
 def actualizar_producto(db: Session, producto_id: int, datos):
     producto = obtener_producto(db, producto_id)
     if producto:
         producto.nombre = datos.nombre
+        producto.categoria = datos.categoria
         producto.precio = datos.precio
         producto.stock = datos.stock
+        producto.imagenes = json.dumps(datos.imagenes)
         db.commit()
         db.refresh(producto)
+        producto.imagenes = json.loads(producto.imagenes or "[]")
     return producto
 
 
@@ -62,7 +76,7 @@ def crear_venta(db: Session, venta_data):
         )
         detalles.append(detalle)
 
-    venta = modelos.Venta(total=total)
+    venta = modelos.Venta(total=total, fecha=datetime.now(timezone.utc).isoformat())
     db.add(venta)
     db.commit()
     db.refresh(venta)
@@ -72,5 +86,21 @@ def crear_venta(db: Session, venta_data):
         db.add(d)
 
     db.commit()
-
+    db.refresh(venta)
     return venta
+
+
+def obtener_ventas(db: Session):
+    return db.query(modelos.Venta).all()
+
+
+def obtener_usuario_por_username(db: Session, username: str):
+    return db.query(modelos.Usuario).filter(modelos.Usuario.username == username).first()
+
+
+def crear_usuario(db: Session, username: str, hashed_password: str, rol: str = "admin"):
+    usuario = modelos.Usuario(username=username, hashed_password=hashed_password, rol=rol)
+    db.add(usuario)
+    db.commit()
+    db.refresh(usuario)
+    return usuario

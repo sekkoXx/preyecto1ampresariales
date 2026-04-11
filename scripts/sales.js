@@ -7,14 +7,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let cart = [];
 
     function renderProducts(filter = '') {
+        if (!State.isAuthenticated) {
+            productGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted);">Inicia sesion para vender.</p>';
+            return;
+        }
+
         productGrid.innerHTML = '';
         
         // Solo mostrar productos con stock disponible
         const availableProducts = State.products.filter(p => p.stock > 0);
         
-        const products = availableProducts.filter(p => 
-            p.name.toLowerCase().includes(filter.toLowerCase()) || 
-            p.category.toLowerCase().includes(filter.toLowerCase())
+        const products = availableProducts.filter(p => {
+            const nombre = (p.name || p.nombre || '').toLowerCase();
+            const categoria = (p.category || p.categoria || '').toLowerCase();
+            const search = filter.toLowerCase();
+            return nombre.includes(search) || categoria.includes(search);
+        }
         );
 
         if (products.length === 0) {
@@ -23,16 +31,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         products.forEach(p => {
-            const imgHtml = (p.images && p.images.length > 0) 
-                            ? `<img src="${p.images[0]}" class="product-img">` 
+            const images = p.images || p.imagenes || [];
+            const nombre = p.name || p.nombre;
+            const precio = p.price || p.precio;
+            const imgHtml = (images && images.length > 0) 
+                            ? `<img src="${images[0]}" class="product-img">` 
                             : `<div class="product-img"><i class='bx bx-image'></i></div>`;
 
             const div = document.createElement('div');
             div.className = 'product-card';
             div.innerHTML = `
                 ${imgHtml}
-                <h4>${p.name}</h4>
-                <div class="price">$${parseFloat(p.price).toFixed(2)}</div>
+                <h4>${nombre}</h4>
+                <div class="price">$${parseFloat(precio).toFixed(2)}</div>
                 <div class="stock">Disponibles: ${p.stock}</div>
             `;
             div.addEventListener('click', () => addToCart(p));
@@ -60,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             div.className = 'cart-item';
             div.innerHTML = `
                 <div class="cart-item-info">
-                    <h5>${item.name}</h5>
+                    <h5>${item.name || item.nombre}</h5>
                     <p>$${item.price.toFixed(2)} c/u</p>
                 </div>
                 <div class="cart-item-controls">
@@ -81,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function addToCart(product) {
+        const productPrice = Number(product.price || product.precio);
         const existingItem = cart.find(item => item.id === product.id);
         
         if (existingItem) {
@@ -90,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 State.notify('No hay suficiente stock disponible.', true);
             }
         } else {
-            cart.push({ ...product, quantity: 1 });
+            cart.push({ ...product, price: productPrice, quantity: 1 });
         }
         
         renderCart();
@@ -124,42 +136,21 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCart();
     });
 
-    document.getElementById('btn-process-sale').addEventListener('click', () => {
+    document.getElementById('btn-process-sale').addEventListener('click', async () => {
         if (cart.length === 0) {
             State.notify('El carrito está vacío.');
             return;
         }
 
-        // Process Sale
-        const saleTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        
-        // 1. Decrease stock for each item sold
-        cart.forEach(cartItem => {
-            const productIndex = State.products.findIndex(p => p.id === cartItem.id);
-            if (productIndex !== -1) {
-                State.products[productIndex].stock -= cartItem.quantity;
-            }
-        });
-
-        // 2. Record the sale
-        const newSale = {
-            id: Date.now().toString(),
-            date: new Date().toISOString(),
-            items: [...cart],
-            total: saleTotal
-        };
-
-        State.sales.push(newSale);
-        
-        // 3. Save updates to local storage
-        State.saveProducts();
-        State.saveSales();
-
-        // 4. Clear Cart and notify
-        cart = [];
-        renderCart();
-        renderProducts(searchInput.value);
-        State.notify('¡Venta registrada con éxito!');
+        try {
+            await State.createSale(cart);
+            cart = [];
+            renderCart();
+            renderProducts(searchInput.value);
+            State.notify('¡Venta registrada con éxito!');
+        } catch (error) {
+            State.notify(error.message, true);
+        }
     });
 
     window.addEventListener('productsUpdated', () => renderProducts());
