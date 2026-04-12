@@ -5,7 +5,7 @@ import os
 from .database import engine, Base, SessionLocal
 from .routers import auth, admin, products, sales, metrics
 from . import crud, models
-from .auth import get_password_hash
+from .routers.auth import get_password_hash
 
 app = FastAPI(title="NexPOS API", version="2.0.0")
 

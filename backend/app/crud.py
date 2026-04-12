@@ -2,17 +2,17 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 import json
 
-from . import modelos, esquemas
+from . import models, schemas
 
 def get_user_by_username(db: Session, username: str):
-    return db.query(modelos.Usuario).filter(modelos.Usuario.username == username).first()
+    return db.query(models.Usuario).filter(models.Usuario.username == username).first()
 
 def get_user_by_id(db: Session, user_id: int):
-    return db.query(modelos.Usuario).filter(modelos.Usuario.id == user_id).first()
+    return db.query(models.Usuario).filter(models.Usuario.id == user_id).first()
 
-def create_user(db: Session, user: esquemas.UsuarioCreate, hashed_password: str):
+def create_user(db: Session, user: schemas.UsuarioCreate, hashed_password: str):
     is_app = True if user.rol == "buyer" else False
-    db_user = modelos.Usuario(
+    db_user = models.Usuario(
         username=user.username,
         hashed_password=hashed_password,
         rol=user.rol,
@@ -32,10 +32,10 @@ def update_user_approval(db: Session, user_id: int, is_approved: bool):
     return db_user
 
 def get_products(db: Session):
-    return db.query(modelos.Producto).all()
+    return db.query(models.Producto).all()
 
-def create_product(db: Session, product: esquemas.ProductoCreate):
-    db_item = modelos.Producto(
+def create_product(db: Session, product: schemas.ProductoCreate):
+    db_item = models.Producto(
         nombre=product.nombre,
         categoria=product.categoria,
         precio=product.precio,
@@ -47,8 +47,8 @@ def create_product(db: Session, product: esquemas.ProductoCreate):
     db.refresh(db_item)
     return db_item
 
-def update_product(db: Session, product_id: int, data: esquemas.ProductoCreate):
-    db_item = db.query(modelos.Producto).filter(modelos.Producto.id == product_id).first()
+def update_product(db: Session, product_id: int, data: schemas.ProductoCreate):
+    db_item = db.query(models.Producto).filter(models.Producto.id == product_id).first()
     if db_item:
         db_item.nombre = data.nombre
         db_item.categoria = data.categoria
@@ -60,7 +60,7 @@ def update_product(db: Session, product_id: int, data: esquemas.ProductoCreate):
     return db_item
 
 def delete_product(db: Session, product_id: int):
-    db_item = db.query(modelos.Producto).filter(modelos.Producto.id == product_id).first()
+    db_item = db.query(models.Producto).filter(models.Producto.id == product_id).first()
     if db_item:
         db.delete(db_item)
         db.commit()
@@ -68,12 +68,12 @@ def delete_product(db: Session, product_id: int):
     return False
 
 def get_sales(db: Session):
-    return db.query(modelos.Venta).all()
+    return db.query(models.Venta).all()
 
-def create_sale(db: Session, sale: esquemas.VentaCreate):
+def create_sale(db: Session, sale: schemas.VentaCreate):
     total = 0.0
     for det in sale.productos:
-        prod = db.query(modelos.Producto).filter(modelos.Producto.id == det.producto_id).first()
+        prod = db.query(models.Producto).filter(models.Producto.id == det.producto_id).first()
         if not prod:
             raise ValueError(f"Producto {det.producto_id} no existe")
         if prod.stock < det.cantidad:
@@ -81,7 +81,7 @@ def create_sale(db: Session, sale: esquemas.VentaCreate):
         prod.stock -= det.cantidad
         total += prod.precio * det.cantidad
 
-    db_venta = modelos.Venta(
+    db_venta = models.Venta(
         total=total,
         fecha=datetime.now().isoformat()
     )
@@ -90,7 +90,7 @@ def create_sale(db: Session, sale: esquemas.VentaCreate):
     db.refresh(db_venta)
 
     for det in sale.productos:
-        db_det = modelos.DetalleVenta(
+        db_det = models.DetalleVenta(
             venta_id=db_venta.id,
             producto_id=det.producto_id,
             cantidad=det.cantidad
