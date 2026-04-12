@@ -80,7 +80,7 @@
                 <li data-target="sales" id="nav-sales" style="display: none;">
                     <i class='bx bx-cart'></i> Punto de Venta
                 </li>
-                <li data-target="history">
+                 <li data-target="history" id="nav-history">
                      <i class='bx bx-time'></i> Historial
                 </li>
                 <li data-target="admin" id="nav-admin" style="display: none;">
@@ -118,12 +118,38 @@
                                 <p id="dash-total-products">0</p>
                             </div>
                         </div>
+                        <div class="stat-card buyer-only" id="buyer-total-spent-card" style="display:none;">
+                            <div class="stat-icon"><i class='bx bx-cart-alt'></i></div>
+                            <div class="stat-info">
+                                <h3>Total Gastado</h3>
+                                <p id="buyer-total-spent">$0.00</p>
+                            </div>
+                        </div>
                         <div class="stat-card seller-only" style="display: none;">
                             <div class="stat-icon"><i class='bx bx-dollar-circle'></i></div>
                             <div class="stat-info">
                                 <h3>Ventas Totales</h3>
                                 <p id="dash-total-sales">$0.00</p>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="buyer-only mt-4" id="buyer-history-panel" style="display:none;">
+                        <div class="header-action">
+                            <h2>Mis compras recientes</h2>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Compra</th>
+                                        <th>Productos</th>
+                                        <th>Total</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="buyer-history-table"></tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -196,7 +222,7 @@
                         </div>
 
                         <div class="pos-cart">
-                            <h2>Carrito de Venta</h2>
+                            <h2 id="sales-panel-title">Carrito de Venta</h2>
                             <div class="cart-items" id="cart-items">
                             </div>
                             
@@ -230,7 +256,8 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>ID Venta</th>
+                    <th>ID Compra</th>
+                    <th>Productos</th>
                     <th>Total</th>
                     <th>Fecha</th>
                 </tr>

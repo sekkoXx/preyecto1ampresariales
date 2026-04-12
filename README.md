@@ -8,7 +8,7 @@
 3. Ejecuta el servidor:
 	- `uvicorn main:app --reload`
 4. La API queda en:
-	- `http://127.0.0.1:8000`
+	- `http://127.0.0.1:8001`
 
 Credenciales de prueba creadas automaticamente:
 

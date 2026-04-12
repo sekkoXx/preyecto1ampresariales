@@ -71,7 +71,7 @@ def delete_product(db: Session, product_id: int):
 def get_sales(db: Session):
     return db.query(models.Venta).all()
 
-def create_sale(db: Session, sale: schemas.VentaCreate):
+def create_sale(db: Session, sale: schemas.VentaCreate, buyer_id: int | None = None):
     total = 0.0
     for det in sale.productos:
         prod = db.query(models.Producto).filter(models.Producto.id == det.producto_id).first()
@@ -98,6 +98,45 @@ def create_sale(db: Session, sale: schemas.VentaCreate):
         )
         db.add(db_det)
     
+    if buyer_id is not None:
+        db_compra = models.Compra(
+            usuario_id=buyer_id,
+            venta_id=db_venta.id,
+            fecha=db_venta.fecha,
+        )
+        db.add(db_compra)
+
     db.commit()
     db.refresh(db_venta)
     return db_venta
+
+
+def get_purchase_history(db: Session, user_id: int):
+    compras = (
+        db.query(models.Compra)
+        .filter(models.Compra.usuario_id == user_id)
+        .order_by(models.Compra.id.desc())
+        .all()
+    )
+
+    history = []
+    for compra in compras:
+        venta = compra.venta
+        productos = []
+        for detalle in venta.detalles:
+            producto = db.query(models.Producto).filter(models.Producto.id == detalle.producto_id).first()
+            productos.append({
+                "producto_id": detalle.producto_id,
+                "nombre": producto.nombre if producto else f"Producto {detalle.producto_id}",
+                "cantidad": detalle.cantidad,
+                "precio": producto.precio if producto else 0.0,
+            })
+
+        history.append({
+            "id": compra.id,
+            "total": venta.total,
+            "fecha": compra.fecha or venta.fecha,
+            "productos": productos,
+        })
+
+    return history

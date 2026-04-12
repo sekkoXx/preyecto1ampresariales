@@ -2,13 +2,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const productGrid = document.getElementById('pos-product-grid');
     const searchInput = document.getElementById('pos-search');
     const cartItemsContainer = document.getElementById('cart-items');
+    const salesPanelTitle = document.getElementById('sales-panel-title');
+    const processButton = document.getElementById('btn-process-sale');
+    const clearButton = document.getElementById('btn-clear-cart');
+
+    function updateSalesModeLabels() {
+        const isBuyer = State.currentUser?.rol === 'buyer';
+        if (salesPanelTitle) {
+            salesPanelTitle.innerText = isBuyer ? 'Carrito de Compra' : 'Carrito de Venta';
+        }
+        if (searchInput) {
+            searchInput.placeholder = isBuyer ? 'Buscar productos para comprar...' : 'Buscar productos para vender...';
+        }
+        if (processButton) {
+            processButton.innerText = isBuyer ? 'Finalizar Compra' : 'Procesar Venta';
+        }
+        if (clearButton) {
+            clearButton.innerText = isBuyer ? 'Cancelar Compra' : 'Cancelar Venta';
+        }
+    }
+
+    window.addEventListener('userChanged', updateSalesModeLabels);
     
     // Cart state
     let cart = [];
 
     function renderProducts(filter = '') {
         if (!State.isAuthenticated) {
-            productGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted);">Inicia sesion para vender.</p>';
+            productGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted);">Inicia sesion para comprar.</p>';
             return;
         }
 
@@ -145,14 +166,14 @@ document.addEventListener('DOMContentLoaded', () => {
             await State.createSale(cart);
 
             //  actualizar historial automáticamente
-            if (State.fetchPurchaseHistory) {
+            if (State.currentUser?.rol === 'buyer' && State.fetchPurchaseHistory) {
                 await State.fetchPurchaseHistory();
             }
 
             cart = [];
             renderCart();
             renderProducts(searchInput.value);
-            State.notify('¡Venta registrada con éxito!');
+            State.notify(State.currentUser?.rol === 'buyer' ? '¡Compra registrada con éxito!' : '¡Venta registrada con éxito!');
         } catch (error) {
             State.notify(error.message, true);
         }
@@ -161,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('productsUpdated', () => renderProducts());
     
     // Initial Render
+    updateSalesModeLabels();
     renderProducts();
     renderCart();
 });

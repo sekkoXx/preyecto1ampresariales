@@ -15,14 +15,14 @@ Este archivo explica como levantar el servidor y que debe hacer tu companero par
 3. Ejecuta el servidor con el Python del entorno virtual:
 
 ```powershell
-c:\Users\sebas\OneDrive\Escritorio\preyecto1ampresariales\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+c:\Users\sebas\OneDrive\Escritorio\preyecto1ampresariales\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8001
 ```
 
 4. Deja esa terminal abierta mientras uses la aplicacion.
 5. Verifica que la API responda abriendo en el navegador:
 
 ```text
-http://127.0.0.1:8000/
+http://127.0.0.1:8001/
 ```
 
 Si todo esta bien, debe aparecer un mensaje como:
@@ -70,14 +70,11 @@ http://127.0.0.1:5500/index.html
 
 Eso normalmente significa una de estas cosas:
 
-- El backend no esta corriendo.
-- El frontend se abrio como archivo local en vez de servidor estatico.
-- La URL de la API no coincide con el puerto correcto.
 
 ## 6. Orden recomendado para probar
 
 1. Levantar backend.
-2. Probar `http://127.0.0.1:8000/`.
+2. Probar `http://127.0.0.1:8001/`.
 3. Levantar frontend.
 4. Probar login con `admin`.
 5. Revisar compradores y vendedores desde la aplicacion.
@@ -87,7 +84,7 @@ Eso normalmente significa una de estas cosas:
 El frontend usa esta base de API:
 
 ```javascript
-http://127.0.0.1:8000
+http://127.0.0.1:8001
 ```
 
 Si cambias el puerto del backend, tambien debes actualizar esa URL en `scripts/app.js`.

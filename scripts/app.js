@@ -1,4 +1,4 @@
-const API_BASE = 'http://127.0.0.1:8000';
+const API_BASE = 'http://127.0.0.1:8001';
 
 const State = {
     products: [],
@@ -104,18 +104,27 @@ const State = {
         this.currentUser = await this.request('/auth/me');
         const label = document.getElementById('user-label');
         const badge = document.getElementById('user-role-badge');
+        const navSales = document.getElementById('nav-sales');
+        const navHistory = document.getElementById('nav-history');
         label.innerText = `Bienvenido, ${this.currentUser.username}`;
         badge.innerText = this.currentUser.rol.toUpperCase();
         badge.className = `badge ${this.currentUser.rol}`;
 
         const isSellerOrAdmin = ['admin', 'seller'].includes(this.currentUser.rol);
+        const isBuyer = this.currentUser.rol === 'buyer';
         const isAdmin = this.currentUser.rol === 'admin';
 
-        document.getElementById('nav-sales').style.display = isSellerOrAdmin ? 'flex' : 'none';
+        navSales.style.display = (isSellerOrAdmin || isBuyer) ? 'flex' : 'none';
+        navSales.innerHTML = isBuyer ? "<i class='bx bx-shopping-bag'></i> Comprar" : "<i class='bx bx-cart'></i> Punto de Venta";
+        navHistory.style.display = isBuyer ? 'flex' : 'none';
         document.getElementById('nav-admin').style.display = isAdmin ? 'flex' : 'none';
         
         document.querySelectorAll('.seller-only').forEach(el => {
             el.style.display = isSellerOrAdmin ? '' : 'none';
+        });
+
+        document.querySelectorAll('.buyer-only').forEach(el => {
+            el.style.display = isBuyer ? '' : 'none';
         });
 
         if (isAdmin) {
@@ -126,6 +135,8 @@ const State = {
         if (isSellerOrAdmin) {
             await this.fetchChartData();
         }
+
+        window.dispatchEvent(new Event('userChanged'));
     },
 
     async fetchProducts() {
@@ -157,6 +168,11 @@ const State = {
     },
 
     async fetchSales() {
+        if (this.currentUser?.rol === 'buyer') {
+            this.sales = [];
+            window.dispatchEvent(new Event('salesUpdated'));
+            return;
+        }
         this.sales = await this.request('/ventas');
         window.dispatchEvent(new Event('salesUpdated'));
     },
@@ -173,7 +189,11 @@ const State = {
             body: JSON.stringify(payload),
         });
 
-        await Promise.all([this.fetchProducts(), this.fetchSales(), this.fetchPurchaseHistory()]);
+        if (this.currentUser?.rol === 'buyer') {
+            await Promise.all([this.fetchProducts(), this.fetchPurchaseHistory()]);
+        } else {
+            await Promise.all([this.fetchProducts(), this.fetchSales()]);
+        }
 
         if (['admin', 'seller'].includes(this.currentUser.rol)) {
             await this.fetchChartData();
@@ -223,7 +243,13 @@ const State = {
 
     
     async fetchPurchaseHistory() {
-        this.purchaseHistory = await this.request('/ventas');
+        if (this.currentUser?.rol !== 'buyer') {
+            this.purchaseHistory = [];
+            window.dispatchEvent(new Event('historyUpdated'));
+            return;
+        }
+
+        this.purchaseHistory = await this.request('/ventas/mis-compras');
         window.dispatchEvent(new Event('historyUpdated'));
     },
 
@@ -231,11 +257,13 @@ const State = {
         if (!this.token) return;
         try {
             await this.loadCurrentUser();
-            await Promise.all([
-                this.fetchProducts(),
-                this.fetchSales(),
-                this.fetchPurchaseHistory()
-            ]);
+            const loads = [this.fetchProducts()];
+            if (this.currentUser?.rol === 'buyer') {
+                loads.push(this.fetchPurchaseHistory());
+            } else {
+                loads.push(this.fetchSales());
+            }
+            await Promise.all(loads);
             document.getElementById('auth-overlay').classList.remove('active');
         } catch (error) {
             this.logout();
@@ -277,6 +305,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // For seller, total sales from chart data which is already filtered in backend
             const totalSales = State.chartData.reduce((sum, item) => sum + item.total, 0);
             document.getElementById('dash-total-sales').innerText = `$${totalSales.toFixed(2)}`;
+        } else if (State.currentUser?.rol === 'buyer') {
+            document.getElementById('dash-total-products').innerText = State.products.length;
+            const totalSpent = State.purchaseHistory.reduce((sum, purchase) => sum + Number(purchase.total || 0), 0);
+            const spentLabel = document.getElementById('buyer-total-spent');
+            if (spentLabel) {
+                spentLabel.innerText = `$${totalSpent.toFixed(2)}`;
+            }
         } else {
             document.getElementById('dash-total-products').innerText = State.products.length;
             const totalSales = State.sales.reduce((sum, sale) => sum + sale.total, 0);
@@ -290,23 +325,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     //  render historial
     function renderHistory() {
-        const container = document.getElementById('history-container');
-        if (!container) return;
+        const tableBodies = [
+            document.getElementById('history-table-body'),
+            document.getElementById('buyer-history-table')
+        ].filter(Boolean);
 
-        container.innerHTML = '';
+        if (tableBodies.length === 0) return;
 
-        State.purchaseHistory.forEach(s => {
-            const div = document.createElement('div');
-            div.className = 'history-item';
-            div.innerHTML = `
-                <p><strong>Fecha:</strong> ${s.fecha || '---'}</p>
-                <p><strong>Total:</strong> $${s.total}</p>
+        const rows = State.purchaseHistory.map(purchase => {
+            const productsHtml = (purchase.productos || []).map(item => `${item.cantidad}x ${item.nombre}`).join('<br>') || '---';
+            return `
+                <tr>
+                    <td>#${purchase.id}</td>
+                    <td>${productsHtml}</td>
+                    <td>$${Number(purchase.total || 0).toFixed(2)}</td>
+                    <td>${purchase.fecha || '---'}</td>
+                </tr>
             `;
-            container.appendChild(div);
+        }).join('');
+
+        tableBodies.forEach(body => {
+            body.innerHTML = rows || '<tr><td colspan="4" style="text-align:center;">Aun no hay compras registradas.</td></tr>';
         });
     }
 
     window.addEventListener('historyUpdated', renderHistory);
+    window.addEventListener('userChanged', updateDashboard);
 
     // Auth
     const loginForm = document.getElementById('login-form');
@@ -337,7 +381,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await State.login(user, pass);
-            await Promise.all([State.fetchProducts(), State.fetchSales()]);
+            await Promise.all([
+                State.fetchProducts(),
+                State.currentUser?.rol === 'buyer' ? State.fetchPurchaseHistory() : State.fetchSales()
+            ]);
             document.getElementById('auth-overlay').classList.remove('active');
             updateDashboard();
         } catch (err) {

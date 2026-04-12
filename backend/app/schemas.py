@@ -52,6 +52,23 @@ class Venta(BaseModel):
     class Config:
         from_attributes = True
 
+
+class ProductoComprado(BaseModel):
+    producto_id: int
+    nombre: str
+    cantidad: int
+    precio: float
+
+
+class CompraResumen(BaseModel):
+    id: int
+    total: float
+    fecha: str
+    productos: List[ProductoComprado]
+
+    class Config:
+        from_attributes = True
+
 # ------------------------
 
 class Token(BaseModel):

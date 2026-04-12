@@ -28,6 +28,7 @@ class Venta(Base):
     fecha = Column(String)
 
     detalles = relationship("DetalleVenta", back_populates="venta")
+    compra = relationship("Compra", back_populates="venta", uselist=False)
 
 
 class DetalleVenta(Base):
@@ -41,6 +42,18 @@ class DetalleVenta(Base):
     venta = relationship("Venta", back_populates="detalles")
 
 
+class Compra(Base):
+    __tablename__ = "compras"
+
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    venta_id = Column(Integer, ForeignKey("ventas.id"), nullable=False, unique=True)
+    fecha = Column(String)
+
+    usuario = relationship("Usuario", back_populates="compras")
+    venta = relationship("Venta", back_populates="compra")
+
+
 class Usuario(Base):
     __tablename__ = "usuarios"
 
@@ -51,3 +64,4 @@ class Usuario(Base):
     is_approved = Column(Boolean, default=True) # Buyers are true by default, sellers require admin approval
 
     productos = relationship("Producto", back_populates="seller")
+    compras = relationship("Compra", back_populates="usuario")
