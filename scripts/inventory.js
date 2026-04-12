@@ -18,6 +18,24 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let currentProductImages = [];
 
+    //  NUEVO: GENERAR CATEGORÍAS DINÁMICAS
+    function cargarCategorias() {
+        if (!filterCategory) return;
+
+        const categorias = [...new Set(
+            State.products.map(p => (p.category || p.categoria || '').toLowerCase())
+        )];
+
+        filterCategory.innerHTML = '<option value="">Todas</option>';
+
+        categorias.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            filterCategory.appendChild(option);
+        });
+    }
+
     function renderTable(filter = '') {
         if (!State.isAuthenticated) {
             tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Inicia sesion para ver productos.</td></tr>';
@@ -96,8 +114,11 @@ document.addEventListener('DOMContentLoaded', () => {
     filterMinPrice?.addEventListener('input', () => renderTable(searchInput.value));
     filterMaxPrice?.addEventListener('input', () => renderTable(searchInput.value));
 
-    // Listen for state changes
-    window.addEventListener('productsUpdated', () => renderTable(searchInput.value));
+    //  ACTUALIZAR TODO AL CAMBIAR PRODUCTOS
+    window.addEventListener('productsUpdated', () => {
+        cargarCategorias();
+        renderTable(searchInput.value);
+    });
 
     // Image Upload Logic
     fileInput.addEventListener('change', async (e) => {
@@ -229,6 +250,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // =============================
+// CARGAR CATEGORÍAS DINÁMICAS
+// =============================
+function loadCategories() {
+    if (!filterCategory) return;
+
+    const categorias = [...new Set(State.products.map(p => p.category || p.categoria))];
+
+    filterCategory.innerHTML = '<option value="">Todas</option>';
+
+    categorias.forEach(cat => {
+        if (!cat) return;
+        const option = document.createElement('option');
+        option.value = cat.toLowerCase();
+        option.textContent = cat;
+        filterCategory.appendChild(option);
+    });
+}
+
+// Se ejecuta cuando cambian productos
+window.addEventListener('productsUpdated', loadCategories);
+
+// Ejecutar al inicio
+loadCategories();
+
     window.deleteProduct = async function(id) {
         if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
             try {
@@ -239,5 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // INIT
+    cargarCategorias();
     renderTable();
 });

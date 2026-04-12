@@ -78,6 +78,9 @@
                 <li data-target="sales" id="nav-sales" style="display: none;">
                     <i class='bx bx-cart'></i> Punto de Venta
                 </li>
+                <li data-target="history">
+                     <i class='bx bx-time'></i> Historial
+                </li>
                 <li data-target="admin" id="nav-admin" style="display: none;">
                     <i class='bx bx-shield-quarter'></i> Administrador
                 </li>
@@ -140,6 +143,15 @@
                         <i class='bx bx-search'></i>
                         <input type="text" id="inventory-search" placeholder="Buscar productos...">
                     </div>
+                    <div style="display:flex; gap:10px; margin:10px 0;">
+                         <select id="filter-category">
+                         <option value="">Todas las categorías</option>
+                         </select>
+
+                        <input type="number" id="filter-min-price" placeholder="Precio mínimo">
+                        <input type="number" id="filter-max-price" placeholder="Precio máximo">
+                    </div>
+                    
 
                     <div class="table-container">
                         <table class="data-table">
@@ -197,6 +209,26 @@
                         </div>
                     </div>
                 </section>
+                
+
+                <section id="history" class="view">
+                <div class="header-action">
+                    <h1>Historial de Compras</h1>
+                 </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID Venta</th>
+                    <th>Total</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody id="history-table-body"></tbody>
+        </table>
+    </div>
+</section>
 
                 <!-- Admin View -->
                 <section id="admin" class="view">
