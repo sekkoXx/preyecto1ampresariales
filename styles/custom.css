@@ -1,0 +1,84 @@
+/* Append to the end of index.css */
+
+/* Fonts */
+.logo-font {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+}
+
+body {
+    background-color: #0d1117; /* GitHub Dark darker */
+}
+.sidebar, .topbar {
+    background-color: #161b22;
+}
+
+.auth-overlay {
+    backdrop-filter: blur(8px);
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: var(--bg-element);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    border-radius: var(--radius-md);
+    outline: none;
+    font-size: 14px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.text-muted {
+    color: var(--text-muted);
+    text-decoration: none;
+}
+.text-muted:hover {
+    color: var(--primary);
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: var(--bg-element);
+    color: var(--text-muted);
+}
+.badge.admin { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+.badge.seller { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+.badge.buyer { background: rgba(59, 130, 246, 0.2); color: var(--primary); }
+
+.chart-container {
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-top: 32px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.chart-container h2 {
+    margin-bottom: 20px;
+    font-size: 18px;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.mt-4 {
+    margin-top: 24px;
+}
+
+.glass-panel {
+    background: rgba(30, 41, 59, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+}

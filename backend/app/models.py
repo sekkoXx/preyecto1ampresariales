@@ -1,7 +1,6 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text, Boolean
 from sqlalchemy.orm import relationship
-from base_de_datos import Base
-
+from .database import Base
 
 class Producto(Base):
     __tablename__ = "productos"
@@ -41,4 +40,5 @@ class Usuario(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
-    rol = Column(String, default="admin")
+    rol = Column(String, default="buyer")      # buyer, seller, admin
+    is_approved = Column(Boolean, default=True) # Buyers are true by default, sellers require admin approval

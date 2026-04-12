@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${categoria}</td>
                 <td>$${parseFloat(precio).toFixed(2)}</td>
                 <td class="${stockClass}">${p.stock}</td>
+                ${['admin', 'seller'].includes(State.currentUser?.rol) ? `
                 <td class="actions-cell">
                     <button class="btn btn-secondary btn-icon" onclick="editProduct('${p.id}')">
                         <i class='bx bx-edit-alt'></i>
@@ -57,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i class='bx bx-trash'></i>
                     </button>
                 </td>
+                ` : '<td class="seller-only" style="display:none;"></td>'}
             `;
             tableBody.appendChild(tr);
         });

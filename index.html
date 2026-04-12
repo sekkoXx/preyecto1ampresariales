@@ -5,30 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NexPOS - Sistema de Venta e Inventario</title>
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Outfit and Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <!-- Boxicons (Icons) -->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <link rel="stylesheet" href="./styles/index.css">
+    <link rel="stylesheet" href="./styles/custom.css">
 </head>
 <body>
     <div id="auth-overlay" class="auth-overlay active">
         <div class="auth-card">
-            <h1>NexPOS</h1>
-            <p>Inicia sesion para continuar</p>
-            <form id="login-form">
+            <h1 class="logo-font">Nex<span class="text-primary">POS</span></h1>
+            <p id="auth-title">Inicia sesion para continuar</p>
+            
+            <form id="login-form" class="auth-form active">
                 <div class="form-group">
                     <label>Usuario</label>
                     <input type="text" id="login-username" value="admin" required>
                 </div>
                 <div class="form-group">
-                    <label>Contrasena</label>
+                    <label>Contraseña</label>
                     <input type="password" id="login-password" value="admin123" required>
                 </div>
                 <button type="submit" class="btn btn-primary btn-large">Entrar</button>
-                <p id="login-error" class="auth-error"></p>
+                <div class="text-center mt-2">
+                    <a href="#" id="link-to-register" class="text-muted">¿No tienes cuenta? Regístrate</a>
+                </div>
             </form>
+
+            <form id="register-form" class="auth-form" style="display: none;">
+                <div class="form-group">
+                    <label>Nuevo Usuario</label>
+                    <input type="text" id="reg-username" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="reg-password" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Cuenta</label>
+                    <select id="reg-role" class="form-control" required>
+                        <option value="buyer">Comprador</option>
+                        <option value="seller">Vendedor</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success btn-large">Crear Cuenta</button>
+                <div class="text-center mt-2">
+                    <a href="#" id="link-to-login" class="text-muted">Ya tengo cuenta. Iniciar sesión</a>
+                </div>
+            </form>
+
+            <p id="auth-error" class="auth-error"></p>
         </div>
     </div>
 
@@ -36,17 +66,20 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2>Nex<span class="text-primary">POS</span></h2>
+                <h2 class="logo-font">Nex<span class="text-primary">POS</span></h2>
             </div>
-            <ul class="nav-links">
+            <ul class="nav-links" id="sidebar-links">
                 <li class="active" data-target="dashboard">
-                    <i class='bx bx-grid-alt'></i> Panel Principal
+                    <i class='bx bx-grid-alt'></i> Mi Panel
                 </li>
-                <li data-target="inventory">
+                <li data-target="inventory" id="nav-inventory">
                     <i class='bx bx-box'></i> Inventario
                 </li>
-                <li data-target="sales">
+                <li data-target="sales" id="nav-sales" style="display: none;">
                     <i class='bx bx-cart'></i> Punto de Venta
+                </li>
+                <li data-target="admin" id="nav-admin" style="display: none;">
+                    <i class='bx bx-shield-quarter'></i> Administrador
                 </li>
             </ul>
         </aside>
@@ -56,6 +89,7 @@
             <header class="topbar">
                 <div class="user-info">
                     <span id="user-label">Bienvenido</span>
+                    <span id="user-role-badge" class="badge"></span>
                     <i class='bx bx-user-circle'></i>
                     <button class="btn btn-secondary" id="btn-logout">Salir</button>
                 </div>
@@ -76,14 +110,7 @@
                                 <p id="dash-total-products">0</p>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-icon"><i class='bx bx-error-circle'></i></div>
-                            <div class="stat-info">
-                                <h3>Stock Bajo</h3>
-                                <p id="dash-low-stock">0</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
+                        <div class="stat-card seller-only" style="display: none;">
                             <div class="stat-icon"><i class='bx bx-dollar-circle'></i></div>
                             <div class="stat-info">
                                 <h3>Ventas Totales</h3>
@@ -91,32 +118,40 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="chart-container seller-only mt-4" style="display: none;" >
+                        <h2>Ventas en el Tiempo</h2>
+                        <div class="chart-wrapper">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Inventory View -->
                 <section id="inventory" class="view">
                     <div class="header-action">
-                        <h1>Inventario de Productos</h1>
-                        <button class="btn btn-primary" id="btn-add-product">
+                        <h1>Catálogo / Inventario</h1>
+                        <button class="btn btn-primary seller-only" id="btn-add-product" style="display:none;">
                             <i class='bx bx-plus'></i> Nuevo Producto
                         </button>
                     </div>
 
                     <div class="search-bar">
                         <i class='bx bx-search'></i>
-                        <input type="text" id="inventory-search" placeholder="Buscar por nombre o categoría...">
+                        <input type="text" id="inventory-search" placeholder="Buscar productos...">
                     </div>
 
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
                                 <tr>
+                                    <th>Imagen</th>
                                     <th>Cód.</th>
                                     <th>Nombre</th>
                                     <th>Categoría</th>
                                     <th>Precio</th>
                                     <th>Stock</th>
-                                    <th>Acciones</th>
+                                    <th class="seller-only" style="display:none;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="inventory-table-body">
@@ -129,22 +164,18 @@
                 <!-- Sales / POS View -->
                 <section id="sales" class="view">
                     <div class="pos-container">
-                        <!-- Product Selection -->
                         <div class="pos-products">
                             <div class="search-bar">
                                 <i class='bx bx-search'></i>
                                 <input type="text" id="pos-search" placeholder="Buscar productos para vender...">
                             </div>
                             <div class="product-grid" id="pos-product-grid">
-                                <!-- Products loaded here -->
                             </div>
                         </div>
 
-                        <!-- Current Cart -->
                         <div class="pos-cart">
                             <h2>Carrito de Venta</h2>
                             <div class="cart-items" id="cart-items">
-                                <!-- Items will appear here -->
                             </div>
                             
                             <div class="cart-summary">
@@ -166,13 +197,36 @@
                         </div>
                     </div>
                 </section>
+
+                <!-- Admin View -->
+                <section id="admin" class="view">
+                    <div class="header-action">
+                        <h1>Administrador de Usuarios</h1>
+                    </div>
+                    <div class="table-container mt-4">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Rol</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-users-table">
+                                <!-- Loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
         </main>
     </div>
 
     <!-- Modals -->
     <div id="product-modal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content glass-panel">
             <div class="modal-header">
                 <h2 id="modal-title">Agregar Producto</h2>
                 <i class='bx bx-x close-modal'></i>
