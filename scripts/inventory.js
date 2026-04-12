@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterCategory = document.getElementById('filter-category');
     const filterMinPrice = document.getElementById('filter-min-price');
     const filterMaxPrice = document.getElementById('filter-max-price');
+    const filterSoldByMe = document.getElementById('filter-sold-by-me');
     
     // Modal elements
     const modal = document.getElementById('product-modal');
@@ -51,18 +52,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let alertShown = false;
         
+        const isSeller = State.currentUser?.rol === 'seller';
+        const onlySoldByMe = isSeller && filterSoldByMe && filterSoldByMe.checked;
+
         const products = State.products.filter(p => {
             const nombre = (p.name || p.nombre || '').toLowerCase();
             const categoria = (p.category || p.categoria || '').toLowerCase();
             const precio = p.price || p.precio;
             const search = filter.toLowerCase();
 
-            return (
-                (nombre.includes(search) || categoria.includes(search)) &&
-                categoria.includes(categoriaFiltro) &&
-                precio >= precioMin &&
-                precio <= precioMax
-            );
+            const matchSearch = nombre.includes(search) || categoria.includes(search);
+            const matchCategory = categoria.includes(categoriaFiltro);
+            const matchPrice = precio >= precioMin && precio <= precioMax;
+            const matchSeller = !onlySoldByMe || p.seller_id === State.currentUser?.id;
+
+            return matchSearch && matchCategory && matchPrice && matchSeller;
         });
 
         if (products.length === 0) {
@@ -73,9 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
         products.forEach(p => {
             const tr = document.createElement('tr');
             
-            //  ALERTA STOCK BAJO
-            if (p.stock < 5 && !alertShown) {
-                State.notify('⚠️ Hay productos con stock bajo');
+            //  ALERTA STOCK BAJO SOLO PARA VENDEDORES Y SUS PRODUCTOS
+            if (p.stock < 5 && p.seller_id === State.currentUser?.id && !alertShown) {
+                State.notify(`⚠️ Tienes stock bajo en tu producto: ${p.name || p.nombre}`);
                 alertShown = true;
             }
 
@@ -90,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${categoria}</td>
                 <td>$${parseFloat(precio).toFixed(2)}</td>
                 <td class="${stockClass}">${p.stock}</td>
+                <td><span class="badge" style="background:#e0e7ff;color:#3730a3;">${p.seller_username || 'Sistema'}</span></td>
                 ${['admin', 'seller'].includes(State.currentUser?.rol) ? `
                 <td class="actions-cell">
                     <button class="btn btn-secondary btn-icon" onclick="editProduct('${p.id}')">
@@ -113,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     filterCategory?.addEventListener('input', () => renderTable(searchInput.value));
     filterMinPrice?.addEventListener('input', () => renderTable(searchInput.value));
     filterMaxPrice?.addEventListener('input', () => renderTable(searchInput.value));
+    filterSoldByMe?.addEventListener('change', () => renderTable(searchInput.value));
 
     //  ACTUALIZAR TODO AL CAMBIAR PRODUCTOS
     window.addEventListener('productsUpdated', () => {

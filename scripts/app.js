@@ -270,13 +270,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function updateDashboard() {
-        document.getElementById('dash-total-products').innerText = State.products.length;
-        const totalSales = State.sales.reduce((sum, sale) => sum + sale.total, 0);
-        document.getElementById('dash-total-sales').innerText = `$${totalSales.toFixed(2)}`;
+        if (State.currentUser?.rol === 'seller') {
+            const sellerProducts = State.products.filter(p => p.seller_id === State.currentUser.id);
+            document.getElementById('dash-total-products').innerText = sellerProducts.length;
+            
+            // For seller, total sales from chart data which is already filtered in backend
+            const totalSales = State.chartData.reduce((sum, item) => sum + item.total, 0);
+            document.getElementById('dash-total-sales').innerText = `$${totalSales.toFixed(2)}`;
+        } else {
+            document.getElementById('dash-total-products').innerText = State.products.length;
+            const totalSales = State.sales.reduce((sum, sale) => sum + sale.total, 0);
+            document.getElementById('dash-total-sales').innerText = `$${totalSales.toFixed(2)}`;
+        }
     }
 
     window.addEventListener('productsUpdated', updateDashboard);
     window.addEventListener('salesUpdated', updateDashboard);
+    window.addEventListener('chartUpdated', updateDashboard);
 
     //  render historial
     function renderHistory() {
@@ -354,6 +364,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-logout').addEventListener('click', () => {
         State.logout();
     });
+
+    const btnExportPdf = document.getElementById('btn-export-pdf');
+    if (btnExportPdf) {
+        btnExportPdf.addEventListener('click', () => {
+            const element = document.getElementById('dashboard');
+            // Hide the button itself in the PDF
+            const opt = {
+              margin:       0.5,
+              filename:     'reporte_ventas.pdf',
+              image:        { type: 'jpeg', quality: 0.98 },
+              html2canvas:  { scale: 2 },
+              jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            
+            btnExportPdf.style.display = 'none';
+            html2pdf().set(opt).from(element).save().then(() => {
+                btnExportPdf.style.display = 'inline-block';
+            });
+        });
+    }
 
     updateDashboard();
     State.init().then(updateDashboard);

@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
+import json
 
 class ProductoBase(BaseModel):
     nombre: str
@@ -8,11 +9,24 @@ class ProductoBase(BaseModel):
     stock: int
     imagenes: List[str] = []
 
+    @field_validator('imagenes', mode='before')
+    @classmethod
+    def parse_imagenes(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except:
+                return []
+        return v
+
 class ProductoCreate(ProductoBase):
     pass
 
 class Producto(ProductoBase):
     id: int
+    seller_id: Optional[int] = None
+    seller_username: Optional[str] = None
+    
     class Config:
         from_attributes = True
 

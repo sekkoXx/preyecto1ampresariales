@@ -11,6 +11,13 @@ class Producto(Base):
     precio = Column(Float)
     stock = Column(Integer)
     imagenes = Column(Text, default="[]")
+    seller_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+
+    seller = relationship("Usuario", back_populates="productos")
+
+    @property
+    def seller_username(self):
+        return self.seller.username if self.seller else None
 
 
 class Venta(Base):
@@ -42,3 +49,5 @@ class Usuario(Base):
     hashed_password = Column(String)
     rol = Column(String, default="buyer")      # buyer, seller, admin
     is_approved = Column(Boolean, default=True) # Buyers are true by default, sellers require admin approval
+
+    productos = relationship("Producto", back_populates="seller")

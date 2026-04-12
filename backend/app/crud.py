@@ -34,13 +34,14 @@ def update_user_approval(db: Session, user_id: int, is_approved: bool):
 def get_products(db: Session):
     return db.query(models.Producto).all()
 
-def create_product(db: Session, product: schemas.ProductoCreate):
+def create_product(db: Session, product: schemas.ProductoCreate, seller_id: int = None):
     db_item = models.Producto(
         nombre=product.nombre,
         categoria=product.categoria,
         precio=product.precio,
         stock=product.stock,
-        imagenes=json.dumps(product.imagenes)
+        imagenes=json.dumps(product.imagenes),
+        seller_id=seller_id
     )
     db.add(db_item)
     db.commit()

@@ -11,6 +11,8 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- HTML2PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <link rel="stylesheet" href="./styles/index.css">
     <link rel="stylesheet" href="./styles/custom.css">
@@ -104,6 +106,9 @@
                 <section id="dashboard" class="view active">
                     <div class="header-action">
                         <h1>Panel Principal</h1>
+                        <button class="btn btn-primary seller-only" id="btn-export-pdf" style="display:none;">
+                            <i class='bx bxs-file-pdf'></i> Exportar a PDF
+                        </button>
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -150,6 +155,10 @@
 
                         <input type="number" id="filter-min-price" placeholder="Precio mínimo">
                         <input type="number" id="filter-max-price" placeholder="Precio máximo">
+                        <label class="seller-only" style="display:none; align-items:center; gap:5px; margin-left: 10px;">
+                            <input type="checkbox" id="filter-sold-by-me">
+                            Vendido por ti
+                        </label>
                     </div>
                     
 
@@ -163,6 +172,7 @@
                                     <th>Categoría</th>
                                     <th>Precio</th>
                                     <th>Stock</th>
+                                    <th>Vendido por</th>
                                     <th class="seller-only" style="display:none;">Acciones</th>
                                 </tr>
                             </thead>

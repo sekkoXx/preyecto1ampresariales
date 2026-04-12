@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from .. import schemas, crud, models
 from ..database import get_db
 from .auth import get_current_user
-from .products import require_seller_or_admin
 
 router = APIRouter(prefix="/ventas", tags=["ventas"])
 
@@ -15,7 +14,7 @@ def list_sales(db: Session = Depends(get_db), current_user: models.Usuario = Dep
 def register_sale(
     sale: schemas.VentaCreate, 
     db: Session = Depends(get_db), 
-    user: models.Usuario = Depends(require_seller_or_admin)
+    user: models.Usuario = Depends(get_current_user)
 ):
     try:
         return crud.create_sale(db, sale)

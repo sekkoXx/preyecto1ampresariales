@@ -57,8 +57,12 @@ def register(user: schemas.UsuarioCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Role must be buyer or seller")
 
     hashed_password = get_password_hash(user.password)
-    new_user = crud.create_user(db, user, hashed_password)
-    return new_user
+    try:
+        new_user = crud.create_user(db, user, hashed_password)
+        return new_user
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Error interno al guardar la cuenta.")
 
 @router.post("/login", response_model=schemas.Token)
 def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):

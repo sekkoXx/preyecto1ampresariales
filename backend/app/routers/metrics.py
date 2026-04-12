@@ -26,9 +26,21 @@ def get_sales_chart_data(db: Session = Depends(get_db), user: models.Usuario = D
         except ValueError:
             date_str = sale.fecha.split("T")[0] # fallback
 
-        if date_str not in daily_sales:
-            daily_sales[date_str] = 0.0
-        daily_sales[date_str] += sale.total
+        # Calculate what portion of this sale belongs to this seller
+        sale_total = 0.0
+        if user.rol == "admin":
+            sale_total = sale.total
+        else:
+            for detalle in sale.detalles:
+                # We can access producto_id and look it up
+                prod = db.query(models.Producto).filter(models.Producto.id == detalle.producto_id).first()
+                if prod and prod.seller_id == user.id:
+                    sale_total += (prod.precio * detalle.cantidad)
+
+        if sale_total > 0:
+            if date_str not in daily_sales:
+                daily_sales[date_str] = 0.0
+            daily_sales[date_str] += sale_total
 
     # Sort by date
     sorted_sales = [{"date": k, "total": v} for k, v in sorted(daily_sales.items())]

@@ -22,7 +22,7 @@ def create_product(
     db: Session = Depends(get_db), 
     user: models.Usuario = Depends(require_seller_or_admin)
 ):
-    return crud.create_product(db, product)
+    return crud.create_product(db, product, seller_id=user.id)
 
 @router.put("/{product_id}", response_model=schemas.Producto)
 def edit_product(
@@ -31,10 +31,13 @@ def edit_product(
     db: Session = Depends(get_db), 
     user: models.Usuario = Depends(require_seller_or_admin)
 ):
-    updated = crud.update_product(db, product_id, data)
-    if not updated:
+    db_item = db.query(models.Producto).filter(models.Producto.id == product_id).first()
+    if not db_item:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    return updated
+    if user.rol != "admin" and db_item.seller_id != user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para editar este producto")
+        
+    return crud.update_product(db, product_id, data)
 
 @router.delete("/{product_id}")
 def delete_product(
@@ -42,7 +45,11 @@ def delete_product(
     db: Session = Depends(get_db), 
     user: models.Usuario = Depends(require_seller_or_admin)
 ):
-    deleted = crud.delete_product(db, product_id)
-    if not deleted:
+    db_item = db.query(models.Producto).filter(models.Producto.id == product_id).first()
+    if not db_item:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
+    if user.rol != "admin" and db_item.seller_id != user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para eliminar este producto")
+        
+    crud.delete_product(db, product_id)
     return {"ok": True}
