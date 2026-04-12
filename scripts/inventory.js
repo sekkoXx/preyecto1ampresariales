@@ -2,6 +2,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const tableBody = document.getElementById('inventory-table-body');
     const searchInput = document.getElementById('inventory-search');
     
+    //  NUEVOS FILTROS
+    const filterCategory = document.getElementById('filter-category');
+    const filterMinPrice = document.getElementById('filter-min-price');
+    const filterMaxPrice = document.getElementById('filter-max-price');
+    
     // Modal elements
     const modal = document.getElementById('product-modal');
     const form = document.getElementById('product-form');
@@ -20,14 +25,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         tableBody.innerHTML = '';
+
+        // valores de filtros
+        const categoriaFiltro = filterCategory?.value.toLowerCase() || '';
+        const precioMin = parseFloat(filterMinPrice?.value) || 0;
+        const precioMax = parseFloat(filterMaxPrice?.value) || Infinity;
+
+        let alertShown = false;
         
         const products = State.products.filter(p => {
             const nombre = (p.name || p.nombre || '').toLowerCase();
             const categoria = (p.category || p.categoria || '').toLowerCase();
+            const precio = p.price || p.precio;
             const search = filter.toLowerCase();
-            return nombre.includes(search) || categoria.includes(search);
-        }
-        );
+
+            return (
+                (nombre.includes(search) || categoria.includes(search)) &&
+                categoria.includes(categoriaFiltro) &&
+                precio >= precioMin &&
+                precio <= precioMax
+            );
+        });
 
         if (products.length === 0) {
             tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No se encontraron productos.</td></tr>';
@@ -37,7 +55,12 @@ document.addEventListener('DOMContentLoaded', () => {
         products.forEach(p => {
             const tr = document.createElement('tr');
             
-            // Highlight low stock
+            //  ALERTA STOCK BAJO
+            if (p.stock < 5 && !alertShown) {
+                State.notify('⚠️ Hay productos con stock bajo');
+                alertShown = true;
+            }
+
             const stockClass = p.stock < 10 ? 'low-stock' : '';
             const nombre = p.name || p.nombre;
             const categoria = p.category || p.categoria;
@@ -68,6 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTable(e.target.value);
     });
 
+    //  EVENTOS DE FILTROS
+    filterCategory?.addEventListener('input', () => renderTable(searchInput.value));
+    filterMinPrice?.addEventListener('input', () => renderTable(searchInput.value));
+    filterMaxPrice?.addEventListener('input', () => renderTable(searchInput.value));
+
     // Listen for state changes
     window.addEventListener('productsUpdated', () => renderTable(searchInput.value));
 
@@ -76,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const files = Array.from(e.target.files);
         if (currentProductImages.length + files.length > 5) {
             State.notify('Solo puedes subir un máximo de 5 imágenes.', true);
-            e.target.value = ''; // reset
+            e.target.value = '';
             return;
         }
 
@@ -184,7 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Expose edit and delete to global scope for inline handlers
     window.editProduct = function(id) {
         const product = State.products.find(p => p.id === id);
         if (product) {
@@ -212,6 +239,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Initial render
     renderTable();
 });

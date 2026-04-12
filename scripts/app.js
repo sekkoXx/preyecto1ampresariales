@@ -5,6 +5,10 @@ const State = {
     sales: [],
     users: [], // For admin
     chartData: [],
+    
+    
+    purchaseHistory: [],
+
     token: localStorage.getItem('nexpos_token') || '',
     currentUser: null,
 
@@ -78,6 +82,12 @@ const State = {
         });
         this.setToken(data.access_token);
         await this.loadCurrentUser();
+
+        
+        if (this.currentUser.rol === 'seller' && !this.currentUser.is_approved) {
+            this.logout();
+            throw new Error('Tu cuenta de vendedor está pendiente de aprobación.');
+        }
     },
 
     logout() {
@@ -86,6 +96,7 @@ const State = {
         this.products = [];
         this.sales = [];
         this.users = [];
+        this.purchaseHistory = [];
         document.getElementById('auth-overlay').classList.add('active');
     },
 
@@ -97,7 +108,6 @@ const State = {
         badge.innerText = this.currentUser.rol.toUpperCase();
         badge.className = `badge ${this.currentUser.rol}`;
 
-        // Role-based visibility
         const isSellerOrAdmin = ['admin', 'seller'].includes(this.currentUser.rol);
         const isAdmin = this.currentUser.rol === 'admin';
 
@@ -162,7 +172,9 @@ const State = {
             method: 'POST',
             body: JSON.stringify(payload),
         });
-        await Promise.all([this.fetchProducts(), this.fetchSales()]);
+
+        await Promise.all([this.fetchProducts(), this.fetchSales(), this.fetchPurchaseHistory()]);
+
         if (['admin', 'seller'].includes(this.currentUser.rol)) {
             await this.fetchChartData();
         }
@@ -191,10 +203,10 @@ const State = {
                 <td>${u.is_approved ? 'Aprobado' : 'Pendiente'}</td>
                 <td>
                     ${u.rol !== 'admin' && !u.is_approved ? 
-                        `<button class="btn btn-success btn-icon" onclick="State.approveUser(${u.id}, true)" title="Aprobar"><i class='bx bx-check'></i></button>` 
+                        `<button class="btn btn-success btn-icon" onclick="State.approveUser(${u.id}, true)"><i class='bx bx-check'></i></button>` 
                         : ''}
                     ${u.rol !== 'admin' && u.is_approved ? 
-                        `<button class="btn btn-danger btn-icon" onclick="State.approveUser(${u.id}, false)" title="Revocar"><i class='bx bx-x'></i></button>`
+                        `<button class="btn btn-danger btn-icon" onclick="State.approveUser(${u.id}, false)"><i class='bx bx-x'></i></button>`
                         : ''}
                 </td>
             `;
@@ -209,11 +221,21 @@ const State = {
         } catch(e) {}
     },
 
+    
+    async fetchPurchaseHistory() {
+        this.purchaseHistory = await this.request('/ventas');
+        window.dispatchEvent(new Event('historyUpdated'));
+    },
+
     async init() {
         if (!this.token) return;
         try {
             await this.loadCurrentUser();
-            await Promise.all([this.fetchProducts(), this.fetchSales()]);
+            await Promise.all([
+                this.fetchProducts(),
+                this.fetchSales(),
+                this.fetchPurchaseHistory()
+            ]);
             document.getElementById('auth-overlay').classList.remove('active');
         } catch (error) {
             this.logout();
@@ -226,9 +248,10 @@ window.State = State;
 let salesChartObj = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Nav logic
+
     const navLinks = document.querySelectorAll('.nav-links li');
     const views = document.querySelectorAll('.view');
+
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
             if (link.style.display === 'none') return;
@@ -242,51 +265,40 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target === 'inventory') window.dispatchEvent(new Event('productsUpdated'));
             if (target === 'sales') window.dispatchEvent(new Event('productsUpdated'));
             if (target === 'dashboard') updateDashboard();
+            if (target === 'history') renderHistory(); 
         });
     });
 
-    // Dashboard Logic
     function updateDashboard() {
         document.getElementById('dash-total-products').innerText = State.products.length;
         const totalSales = State.sales.reduce((sum, sale) => sum + sale.total, 0);
         document.getElementById('dash-total-sales').innerText = `$${totalSales.toFixed(2)}`;
     }
+
     window.addEventListener('productsUpdated', updateDashboard);
     window.addEventListener('salesUpdated', updateDashboard);
 
-    // Chart.js rendering
-    window.addEventListener('chartUpdated', () => {
-        const ctx = document.getElementById('salesChart');
-        if (!ctx) return;
-        
-        const labels = State.chartData.map(d => d.date);
-        const data = State.chartData.map(d => d.total);
+    //  render historial
+    function renderHistory() {
+        const container = document.getElementById('history-container');
+        if (!container) return;
 
-        if (salesChartObj) salesChartObj.destroy();
-        salesChartObj = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [{
-                    label: 'Ganancias de Ventas ($)',
-                    data,
-                    backgroundColor: 'rgba(59, 130, 246, 0.6)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1,
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true }
-                }
-            }
+        container.innerHTML = '';
+
+        State.purchaseHistory.forEach(s => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `
+                <p><strong>Fecha:</strong> ${s.fecha || '---'}</p>
+                <p><strong>Total:</strong> $${s.total}</p>
+            `;
+            container.appendChild(div);
         });
-    });
+    }
 
-    // Auth Form Logic
+    window.addEventListener('historyUpdated', renderHistory);
+
+    // Auth
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
     const authError = document.getElementById('auth-error');
@@ -312,6 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         authError.innerText = '';
         const user = document.getElementById('login-username').value.trim();
         const pass = document.getElementById('login-password').value;
+
         try {
             await State.login(user, pass);
             await Promise.all([State.fetchProducts(), State.fetchSales()]);
@@ -328,9 +341,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = document.getElementById('reg-username').value.trim();
         const pass = document.getElementById('reg-password').value;
         const role = document.getElementById('reg-role').value;
+
         try {
             await State.register(user, pass, role);
-            State.notify(role === 'seller' ? 'Cuenta creada. Espera aprobación del Admin.' : 'Cuenta creada. Puedes iniciar sesión.');
+            State.notify(role === 'seller' ? 'Cuenta creada. Espera aprobación del Admin.' : 'Cuenta creada.');
             document.getElementById('link-to-login').click();
         } catch (err) {
             authError.innerText = err.message;
@@ -341,7 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
         State.logout();
     });
 
-    // Init
     updateDashboard();
     State.init().then(updateDashboard);
 });

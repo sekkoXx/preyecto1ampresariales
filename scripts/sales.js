@@ -22,8 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const categoria = (p.category || p.categoria || '').toLowerCase();
             const search = filter.toLowerCase();
             return nombre.includes(search) || categoria.includes(search);
-        }
-        );
+        });
 
         if (products.length === 0) {
             productGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted);">No hay productos disponibles.</p>';
@@ -144,6 +143,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await State.createSale(cart);
+
+            //  actualizar historial automáticamente
+            if (State.fetchPurchaseHistory) {
+                await State.fetchPurchaseHistory();
+            }
+
             cart = [];
             renderCart();
             renderProducts(searchInput.value);
