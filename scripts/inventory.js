@@ -88,7 +88,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const categoria = p.category || p.categoria;
             const precio = p.price || p.precio;
 
+            const imgSrc = (p.images && p.images.length > 0) ? p.images[0] : ((p.imagenes && p.imagenes.length > 0) ? p.imagenes[0] : null);
             tr.innerHTML = `
+                <td>
+                    ${imgSrc 
+                        ? `<img src="${imgSrc}" style="width:40px;height:40px;border-radius:4px;object-fit:cover;">` 
+                        : `<div style="width:40px;height:40px;background:var(--bg-element);display:flex;align-items:center;justify-content:center;border-radius:4px;"><i class='bx bx-image text-muted'></i></div>`}
+                </td>
                 <td>#${p.id}</td>
                 <td><strong>${nombre}</strong></td>
                 <td>${categoria}</td>
@@ -223,6 +229,10 @@ document.addEventListener('DOMContentLoaded', () => {
             State.notify('El nombre del producto debe tener al menos 2 caracteres.', true);
             return;
         }
+        if (!categoria) {
+            State.notify('Por favor, selecciona una categoría válida.', true);
+            return;
+        }
         if (precio < 0.01) {
             State.notify('El precio debe ser al menos 0.01.', true);
             return;
@@ -253,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.editProduct = function(id) {
-        const product = State.products.find(p => p.id === id);
+        const product = State.products.find(p => String(p.id) === String(id));
         if (product) {
             document.getElementById('product-id').value = product.id;
             document.getElementById('product-name').value = product.name || product.nombre;

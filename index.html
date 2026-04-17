@@ -174,15 +174,16 @@
                         <i class='bx bx-search'></i>
                         <input type="text" id="inventory-search" placeholder="Buscar productos...">
                     </div>
-                    <div style="display:flex; gap:10px; margin:10px 0;">
-                         <select id="filter-category">
+                    <div class="filters-row glass-panel" style="display:flex; flex-wrap: wrap; gap:12px; margin: 16px 0; padding: 16px; border-radius: var(--radius-md); align-items: center; border: 1px solid var(--border);">
+                         <select id="filter-category" class="form-control" style="width: auto; min-width: 180px;">
                          <option value="">Todas las categorías</option>
                          </select>
 
-                        <input type="number" id="filter-min-price" placeholder="Precio mínimo">
-                        <input type="number" id="filter-max-price" placeholder="Precio máximo">
-                        <label class="seller-only" style="display:none; align-items:center; gap:5px; margin-left: 10px;">
-                            <input type="checkbox" id="filter-sold-by-me">
+                        <input type="number" id="filter-min-price" class="form-control" style="width: 150px;" placeholder="Precio mínimo">
+                        <input type="number" id="filter-max-price" class="form-control" style="width: 150px;" placeholder="Precio máximo">
+                        
+                        <label class="seller-only" style="display:none; align-items:center; gap:8px; margin-left: auto; cursor: pointer; color: var(--text-main); font-weight: 500;">
+                            <input type="checkbox" id="filter-sold-by-me" style="width: 18px; height: 18px; accent-color: var(--primary);">
                             Vendido por ti
                         </label>
                     </div>
@@ -309,7 +310,19 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Categoría</label>
-                        <input type="text" id="product-category" required>
+                        <select id="product-category" class="form-control" required>
+                            <option value="" disabled selected>Seleccionar categoría</option>
+                            <option value="Electrónica">Electrónica</option>
+                            <option value="Ropa">Ropa</option>
+                            <option value="Hogar y Jardín">Hogar y Jardín</option>
+                            <option value="Alimentos">Alimentos</option>
+                            <option value="Juguetes">Juguetes</option>
+                            <option value="Salud y Belleza">Salud y Belleza</option>
+                            <option value="Deportes">Deportes</option>
+                            <option value="Libros">Libros</option>
+                            <option value="Herramientas">Herramientas</option>
+                            <option value="Otros">Otros</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Precio ($)</label>
