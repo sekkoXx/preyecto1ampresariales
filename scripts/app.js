@@ -56,7 +56,11 @@ const State = {
             let detail = 'Error en la solicitud';
             try {
                 const data = await response.json();
-                detail = data.detail || detail;
+                if (Array.isArray(data.detail)) {
+                    detail = data.detail.map(e => `${e.loc ? e.loc[e.loc.length-1] + ': ' : ''}${e.msg}`).join('\n');
+                } else {
+                    detail = data.detail || detail;
+                }
             } catch (_) { }
             throw new Error(detail);
         }
@@ -398,6 +402,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = document.getElementById('reg-username').value.trim();
         const pass = document.getElementById('reg-password').value;
         const role = document.getElementById('reg-role').value;
+
+        if (user.length < 3) {
+            authError.innerText = 'El usuario debe tener al menos 3 caracteres.';
+            return;
+        }
+        if (pass.length < 6) {
+            authError.innerText = 'La contraseña debe tener al menos 6 caracteres.';
+            return;
+        }
 
         try {
             await State.register(user, pass, role);

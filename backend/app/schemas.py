@@ -1,12 +1,12 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
 from typing import List, Optional
 import json
 
 class ProductoBase(BaseModel):
-    nombre: str
-    categoria: str = "General"
-    precio: float
-    stock: int
+    nombre: str = Field(..., min_length=2, max_length=100)
+    categoria: str = Field("General", max_length=50)
+    precio: float = Field(..., ge=0.01)
+    stock: int = Field(..., ge=0)
     imagenes: List[str] = []
 
     @field_validator('imagenes', mode='before')
@@ -34,7 +34,7 @@ class Producto(ProductoBase):
 
 class DetalleVentaBase(BaseModel):
     producto_id: int
-    cantidad: int
+    cantidad: int = Field(..., gt=0)
 
 class DetalleVentaResponse(BaseModel):
     producto_id: int
@@ -80,8 +80,8 @@ class LoginRequest(BaseModel):
     password: str
 
 class UsuarioCreate(BaseModel):
-    username: str
-    password: str
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=6)
     rol: str = "buyer" # buyer, seller
 
 class UsuarioPublico(BaseModel):

@@ -214,10 +214,23 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         
         const id = document.getElementById('product-id').value;
-        const nombre = document.getElementById('product-name').value;
-        const categoria = document.getElementById('product-category').value;
+        const nombre = document.getElementById('product-name').value.trim();
+        const categoria = document.getElementById('product-category').value.trim();
         const precio = parseFloat(document.getElementById('product-price').value);
         const stock = parseInt(document.getElementById('product-stock').value);
+
+        if (nombre.length < 2) {
+            State.notify('El nombre del producto debe tener al menos 2 caracteres.', true);
+            return;
+        }
+        if (precio < 0.01) {
+            State.notify('El precio debe ser al menos 0.01.', true);
+            return;
+        }
+        if (stock < 0) {
+            State.notify('El stock no puede ser negativo.', true);
+            return;
+        }
 
         const payload = {
             nombre,
