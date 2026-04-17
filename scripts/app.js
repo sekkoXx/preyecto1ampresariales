@@ -104,15 +104,64 @@ const State = {
         document.getElementById('auth-overlay').classList.add('active');
     },
 
+    async updateProfile(payload) {
+        await this.request('/auth/me', {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
+        await this.loadCurrentUser();
+    },
+
+    async deleteAccount() {
+        await this.request('/auth/me', {
+            method: 'DELETE',
+        });
+        this.logout();
+    },
+
     async loadCurrentUser() {
         this.currentUser = await this.request('/auth/me');
         const label = document.getElementById('user-label');
         const badge = document.getElementById('user-role-badge');
         const navSales = document.getElementById('nav-sales');
         const navHistory = document.getElementById('nav-history');
-        label.innerText = `Bienvenido, ${this.currentUser.username}`;
+        label.innerText = `Bienvenido, ${this.currentUser.nickname || this.currentUser.username}`;
         badge.innerText = this.currentUser.rol.toUpperCase();
         badge.className = `badge ${this.currentUser.rol}`;
+
+        // Topbar Profile Icon Update
+        const topbarImg = document.getElementById('topbar-profile-img');
+        const topbarPlaceholder = document.getElementById('topbar-profile-placeholder');
+        if (topbarImg && topbarPlaceholder) {
+            if (this.currentUser.profile_image) {
+                topbarImg.src = this.currentUser.profile_image;
+                topbarImg.style.display = 'block';
+                topbarPlaceholder.style.display = 'none';
+            } else {
+                topbarImg.style.display = 'none';
+                topbarPlaceholder.style.display = 'block';
+            }
+        }
+
+        // Profile View Data Update
+        const profileNicknameInput = document.getElementById('profile-nickname');
+        const profileImgPreview = document.getElementById('profile-img-preview');
+        const profileImgPlaceholder = document.getElementById('profile-img-placeholder');
+        
+        if (profileNicknameInput) {
+            profileNicknameInput.value = this.currentUser.nickname || '';
+        }
+        
+        if (profileImgPreview && profileImgPlaceholder) {
+            if (this.currentUser.profile_image) {
+                profileImgPreview.src = this.currentUser.profile_image;
+                profileImgPreview.style.display = 'block';
+                profileImgPlaceholder.style.display = 'none';
+            } else {
+                profileImgPreview.style.display = 'none';
+                profileImgPlaceholder.style.display = 'block';
+            }
+        }
 
         const isSellerOrAdmin = ['admin', 'seller'].includes(this.currentUser.rol);
         const isBuyer = this.currentUser.rol === 'buyer';
@@ -444,6 +493,119 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // ===== THEME MANAGEMENT =====
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        const savedTheme = localStorage.getItem('nexpos_theme');
+        if (savedTheme === 'light') {
+            document.documentElement.classList.add('light-mode');
+            document.body.classList.add('light-mode');
+            themeToggle.checked = true;
+        }
+
+        themeToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.documentElement.classList.add('light-mode');
+                document.body.classList.add('light-mode');
+                localStorage.setItem('nexpos_theme', 'light');
+            } else {
+                document.documentElement.classList.remove('light-mode');
+                document.body.classList.remove('light-mode');
+                localStorage.setItem('nexpos_theme', 'dark');
+            }
+        });
+    }
+
+    // ===== PROFILE MANAGEMENT =====
+    let currentProfileImageBase64 = null;
+    const profileImageInput = document.getElementById('profile-image-input');
+    const profileImgPreview = document.getElementById('profile-img-preview');
+    const profileImgPlaceholder = document.getElementById('profile-img-placeholder');
+
+    if (profileImageInput) {
+        profileImageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const MAX = 200;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } 
+                    else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                    canvas.width = w; canvas.height = h;
+                    ctx.drawImage(img, 0, 0, w, h);
+                    
+                    currentProfileImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                    profileImgPreview.src = currentProfileImageBase64;
+                    profileImgPreview.style.display = 'block';
+                    profileImgPlaceholder.style.display = 'none';
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    const btnSaveProfile = document.getElementById('btn-save-profile');
+    if (btnSaveProfile) {
+        btnSaveProfile.addEventListener('click', async () => {
+            const nickname = document.getElementById('profile-nickname').value.trim();
+            const payload = {};
+            if (nickname !== '') payload.nickname = nickname;
+            if (currentProfileImageBase64) payload.profile_image = currentProfileImageBase64;
+
+            try {
+                await State.updateProfile(payload);
+                State.notify('Perfil guardado con éxito.');
+                currentProfileImageBase64 = null; // reset logic
+            } catch(e) {
+                State.notify(e.message, true);
+            }
+        });
+    }
+
+    const deleteAccountModal = document.getElementById('delete-account-modal');
+    const btnDeleteAccountModal = document.getElementById('btn-delete-account-modal');
+    const deleteAccountInput = document.getElementById('delete-account-input');
+    const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+    
+    if (btnDeleteAccountModal) {
+        btnDeleteAccountModal.addEventListener('click', () => {
+            document.getElementById('delete-confirm-username').innerText = State.currentUser.username;
+            deleteAccountInput.value = '';
+            btnConfirmDelete.disabled = true;
+            deleteAccountModal.classList.add('active');
+        });
+    }
+
+    if (deleteAccountInput) {
+        deleteAccountInput.addEventListener('input', (e) => {
+            btnConfirmDelete.disabled = e.target.value !== State.currentUser.username;
+        });
+    }
+
+    document.getElementById('btn-cancel-delete')?.addEventListener('click', () => {
+        deleteAccountModal.classList.remove('active');
+    });
+
+    btnConfirmDelete?.addEventListener('click', async () => {
+        if (deleteAccountInput.value === State.currentUser.username) {
+            try {
+                await State.deleteAccount();
+                deleteAccountModal.classList.remove('active');
+                State.notify('Cuenta eliminada permanentemente.');
+            } catch (e) {
+                State.notify(e.message, true);
+            }
+        }
+    });
 
     updateDashboard();
     State.init().then(updateDashboard);

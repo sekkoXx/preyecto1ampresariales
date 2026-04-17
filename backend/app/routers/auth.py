@@ -83,3 +83,24 @@ def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
 @router.get("/me", response_model=schemas.UsuarioPublico)
 def get_me(current_user: models.Usuario = Depends(get_current_user)):
     return current_user
+
+@router.put("/me", response_model=schemas.UsuarioPublico)
+def update_me(data: schemas.UsuarioUpdate, current_user: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    if data.nickname is not None:
+        current_user.nickname = data.nickname
+    if data.profile_image is not None:
+        current_user.profile_image = data.profile_image
+    
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_me(current_user: models.Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Remove ownership of products
+    for producto in current_user.productos:
+        producto.seller_id = None
+        
+    db.delete(current_user)
+    db.commit()
+    return None

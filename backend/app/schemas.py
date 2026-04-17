@@ -84,11 +84,17 @@ class UsuarioCreate(BaseModel):
     password: str = Field(..., min_length=6)
     rol: str = "buyer" # buyer, seller
 
+class UsuarioUpdate(BaseModel):
+    nickname: Optional[str] = None
+    profile_image: Optional[str] = None
+
 class UsuarioPublico(BaseModel):
     id: int
     username: str
     rol: str
     is_approved: bool
+    nickname: Optional[str] = None
+    profile_image: Optional[str] = None
 
     class Config:
         from_attributes = True

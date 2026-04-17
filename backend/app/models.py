@@ -62,6 +62,8 @@ class Usuario(Base):
     hashed_password = Column(String)
     rol = Column(String, default="buyer")      # buyer, seller, admin
     is_approved = Column(Boolean, default=True) # Buyers are true by default, sellers require admin approval
+    nickname = Column(String, nullable=True)
+    profile_image = Column(Text, nullable=True)
 
     productos = relationship("Producto", back_populates="seller")
     compras = relationship("Compra", back_populates="usuario")

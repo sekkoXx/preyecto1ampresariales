@@ -82,3 +82,53 @@ body {
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255,255,255,0.1);
 }
+
+/* Light Mode Overrides */
+:root.light-mode {
+    --bg-dark: #f1f5f9;
+    --bg-panel: #ffffff;
+    --bg-element: #e2e8f0;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --border: #cbd5e1;
+}
+
+body.light-mode {
+    background-color: var(--bg-dark);
+}
+
+body.light-mode .sidebar {
+    background-color: var(--bg-panel);
+}
+
+body.light-mode .topbar {
+    background-color: var(--bg-panel);
+}
+
+body.light-mode .glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Slider for Switch */
+.switch input:checked + .slider {
+    background-color: var(--primary);
+}
+.switch input:focus + .slider {
+    box-shadow: 0 0 1px var(--primary);
+}
+.switch input:checked + .slider:before {
+    transform: translateX(22px);
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
