@@ -29,7 +29,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderProducts(filter = '') {
         if (!State.isAuthenticated) {
-            productGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted);">Inicia sesion para comprar.</p>';
+            productGrid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><i class="bx bx-lock-alt"></i><h3>Inicia Sesión</h3><p>Para poder comprar, necesitas iniciar sesión.</p></div>';
+            return;
+        }
+
+        if (State.isLoadingProducts) {
+            productGrid.innerHTML = Array.from({length: 8}).map(() => `
+                <div class="product-card skeleton" style="border: none;">
+                    <div class="skeleton-card" style="height: 120px; margin-bottom: 12px; border-radius: var(--radius-md);"></div>
+                    <div class="skeleton-text" style="width: 80%; margin: 0 auto 8px auto;"></div>
+                    <div class="skeleton-text" style="width: 50%; margin: 0 auto 8px auto; height: 18px;"></div>
+                    <div class="skeleton-text" style="width: 60%; margin: 0 auto;"></div>
+                </div>
+            `).join('');
             return;
         }
 
@@ -46,7 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (products.length === 0) {
-            productGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted);">No hay productos disponibles.</p>';
+            const isBuyer = State.currentUser?.rol === 'buyer';
+            productGrid.innerHTML = `
+                <div class="empty-state" style="grid-column: 1/-1;">
+                    <i class="bx bx-receipt"></i>
+                    <h3>No hay productos disponibles</h3>
+                    <p>${isBuyer ? 'Intenta buscar con otros términos.' : 'Agrega stock a tus productos en el Inventario para vender.'}</p>
+                </div>
+            `;
             return;
         }
 
@@ -179,7 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    window.addEventListener('productsUpdated', () => renderProducts());
+    window.addEventListener('productsUpdated', () => renderProducts(searchInput.value));
+    window.addEventListener('productsLoading', () => renderProducts(searchInput.value));
     
     // Initial Render
     updateSalesModeLabels();

@@ -39,7 +39,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderTable(filter = '') {
         if (!State.isAuthenticated) {
-            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Inicia sesion para ver productos.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Inicia sesión para ver productos.</td></tr>';
+            return;
+        }
+
+        if (State.isLoadingProducts) {
+            tableBody.innerHTML = Array.from({length: 5}).map(() => `
+                <tr>
+                    <td><div class="skeleton skeleton-row" style="width: 40px; height: 40px; border-radius: 4px;"></div></td>
+                    <td><div class="skeleton skeleton-text" style="width: 30px;"></div></td>
+                    <td><div class="skeleton skeleton-text" style="width: 120px;"></div></td>
+                    <td><div class="skeleton skeleton-text" style="width: 80px;"></div></td>
+                    <td><div class="skeleton skeleton-text" style="width: 60px;"></div></td>
+                    <td><div class="skeleton skeleton-text" style="width: 40px;"></div></td>
+                    <td><div class="skeleton skeleton-text" style="width: 80px;"></div></td>
+                    <td class="seller-only"><div class="skeleton skeleton-text" style="width: 60px;"></div></td>
+                </tr>
+            `).join('');
             return;
         }
 
@@ -70,7 +86,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (products.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No se encontraron productos.</td></tr>';
+            const hasAnyProduct = State.products.length > 0;
+            const ctaMessage = State.currentUser?.rol === 'seller' ? 'Crea tu primer producto' : 'Aún no hay productos en la tienda';
+            
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <i class='bx bx-box'></i>
+                            <h3>${hasAnyProduct ? 'No se encontraron productos' : 'Inventario Vacío'}</h3>
+                            <p>${hasAnyProduct ? 'Intenta ajustando los filtros de búsqueda.' : ctaMessage}</p>
+                            ${!hasAnyProduct && State.currentUser?.rol === 'seller' ? `<button class="btn btn-primary" onclick="document.getElementById('btn-add-product').click()"><i class='bx bx-plus'></i> Crear Producto</button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
             return;
         }
 
@@ -129,6 +159,10 @@ document.addEventListener('DOMContentLoaded', () => {
     //  ACTUALIZAR TODO AL CAMBIAR PRODUCTOS
     window.addEventListener('productsUpdated', () => {
         cargarCategorias();
+        renderTable(searchInput.value);
+    });
+
+    window.addEventListener('productsLoading', () => {
         renderTable(searchInput.value);
     });
 

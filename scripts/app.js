@@ -17,10 +17,41 @@ const State = {
     },
 
     notify(msg, isError = false) {
-        alert(msg);
-        if (isError) {
-            console.error(msg);
+        if (isError) console.error(msg);
+        
+        const container = document.getElementById('toast-container');
+        if (!container) {
+            alert(msg);
+            return;
         }
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${isError ? 'error' : 'success'}`;
+        
+        const icon = document.createElement('i');
+        icon.className = isError ? 'bx bx-error-circle' : 'bx bx-check-circle';
+        
+        const text = document.createElement('span');
+        text.className = 'toast-msg';
+        text.innerText = msg;
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-toast';
+        closeBtn.innerHTML = '<i class="bx bx-x"></i>';
+        
+        toast.appendChild(icon);
+        toast.appendChild(text);
+        toast.appendChild(closeBtn);
+        
+        container.appendChild(toast);
+        
+        const removeToast = () => {
+            toast.classList.add('fadeOut');
+            setTimeout(() => toast.remove(), 300);
+        };
+        
+        closeBtn.addEventListener('click', removeToast);
+        setTimeout(removeToast, 4000);
     },
 
     setToken(token) {
@@ -193,8 +224,14 @@ const State = {
     },
 
     async fetchProducts() {
-        this.products = await this.request('/productos');
-        window.dispatchEvent(new Event('productsUpdated'));
+        this.isLoadingProducts = true;
+        window.dispatchEvent(new Event('productsLoading'));
+        try {
+            this.products = await this.request('/productos');
+        } finally {
+            this.isLoadingProducts = false;
+            window.dispatchEvent(new Event('productsUpdated'));
+        }
     },
 
     async createProduct(payload) {
@@ -221,13 +258,18 @@ const State = {
     },
 
     async fetchSales() {
-        if (this.currentUser?.rol === 'buyer') {
-            this.sales = [];
+        this.isLoadingSales = true;
+        window.dispatchEvent(new Event('salesLoading'));
+        try {
+            if (this.currentUser?.rol === 'buyer') {
+                this.sales = [];
+                return;
+            }
+            this.sales = await this.request('/ventas');
+        } finally {
+            this.isLoadingSales = false;
             window.dispatchEvent(new Event('salesUpdated'));
-            return;
         }
-        this.sales = await this.request('/ventas');
-        window.dispatchEvent(new Event('salesUpdated'));
     },
 
     async createSale(cartItems) {
@@ -398,7 +440,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
 
         tableBodies.forEach(body => {
-            body.innerHTML = rows || '<tr><td colspan="4" style="text-align:center;">Aun no hay compras registradas.</td></tr>';
+            body.innerHTML = rows || `
+                <tr>
+                    <td colspan="4">
+                        <div class="empty-state">
+                            <i class='bx bx-time-five'></i>
+                            <h3>Aún no hay compras registradas</h3>
+                            <p>Tus compras aparecerán aquí después de procesar tu primer pedido.</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
         });
     }
 
